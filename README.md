@@ -5,20 +5,118 @@ Repositori ini adalah **Starter Code** yang telah dilengkapi fitur dasar Modul 3
 
 ---
 
-## Persiapan & Perintah Artisan
+## Prasyarat Lingkungan (Prerequisites)
 
-1. Pastikan konfigurasi database pada file `.env` sudah sesuai.
-2. Jalankan migrasi dan seeder awal untuk memastikan aplikasi berjalan dengan baik:
-   ```bash
-   php artisan migrate:fresh --seed
-   ```
-3. Jalankan server lokal Laravel:
-   ```bash
-   php artisan serve
-   ```
-4. Buka aplikasi di browser melalui alamat `http://127.0.0.1:8000`.
+Sebelum melakukan clone dan menjalankan proyek ini, pastikan komputer/laptop Anda telah terpasang:
+- **Git** ([Unduh Git](https://git-scm.com/))
+- **PHP** versi 8.2 atau lebih baru
+- **Composer** ([Unduh Composer](https://getcomposer.org/))
+- **Database Server** (MySQL / MariaDB, misalnya melalui XAMPP, Laragon, Docker, atau native)
+- **Node.js & NPM** (Opsional, versi LTS untuk kompilasi aset frontend)
 
-> **Catatan:** Setiap kali Anda selesai mengerjakan **TODO 1** (Migration) dan **TODO 8** (Seeder), jalankan kembali perintah `php artisan migrate:fresh --seed` agar perubahan skema tabel dan data awal diterapkan ke database.
+---
+
+## Panduan Clone & Setup Proyek dari GitHub (Lokal)
+
+Ikuti langkah-langkah berikut secara berurutan pada terminal (Command Prompt / Git Bash / Terminal macOS):
+
+### 1. Clone Repositori
+Buka terminal di folder tempat Anda biasa menyimpan tugas/proyek kuliah, lalu jalankan:
+```bash
+git clone https://github.com/USERNAME_ATAU_ORGANISASI/NAMA_REPO.git
+```
+> Ganti URL di atas dengan tautan repositori GitHub yang telah disediakan oleh Asisten Praktikum.
+
+Masuk ke dalam direktori proyek yang baru saja di-clone:
+```bash
+cd NAMA_REPO
+```
+
+---
+
+### 2. Install Dependensi PHP (Composer)
+Folder `vendor/` tidak disertakan di GitHub karena ukuran filenya yang besar. Unduh seluruh dependensi proyek Laravel dengan perintah:
+```bash
+composer install
+```
+
+---
+
+### 3. Buat File Konfigurasi Lingkungan (`.env`)
+Salin file `.env.example` menjadi `.env`:
+
+- **Windows (Command Prompt / PowerShell):**
+  ```bash
+  copy .env.example .env
+  ```
+- **macOS / Linux / Git Bash:**
+  ```bash
+  cp .env.example .env
+  ```
+
+---
+
+### 4. Generate Application Key
+Generate kunci enkripsi aplikasi Laravel agar session dan keamanan aplikasi berfungsi:
+```bash
+php artisan key:generate
+```
+
+---
+
+### 5. Konfigurasi Database
+1. Pastikan service **MySQL** sudah berjalan (misal klik **Start** pada Apache & MySQL di XAMPP / Laragon).
+2. Buka aplikasi manajemen database Anda (phpMyAdmin, DBeaver, TablePlus, atau CLI) lalu buat sebuah database baru, misalnya dengan nama:
+   ```sql
+   CREATE DATABASE jurnalmodul4;
+   ```
+3. Buka file `.env` menggunakan teks editor (VS Code), cari baris konfigurasi database, dan sesuaikan:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=jurnalmodul4
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+   *(Sesuaikan `DB_USERNAME` dan `DB_PASSWORD` jika MySQL Anda menggunakan password khusus).*
+
+---
+
+### 6. Jalankan Migrasi & Seeder Awal
+Jalankan migrasi database dan pengisian data dummy awal:
+```bash
+php artisan migrate:fresh --seed
+```
+Perintah ini akan membuat struktur tabel dasar Modul 3 dan memasukkan akun default Dosen & Mahasiswa.
+
+---
+
+### 7. (Opsional) Install & Kompilasi Aset Frontend
+Jika Anda ingin memperbarui atau membangun aset Tailwind CSS / Vite:
+```bash
+npm install
+npm run build
+```
+
+---
+
+### 8. Jalankan Server Lokal Laravel
+Jalankan development server Laravel:
+```bash
+php artisan serve
+```
+Buka peramban (browser) Anda dan akses alamat:
+```text
+http://127.0.0.1:8000
+```
+
+> **Catatan Penting saat Pengerjaan:**
+> Setiap kali Anda selesai mengerjakan **TODO 1** (Migration) dan **TODO 8** (Seeder), jalankan kembali:
+> ```bash
+> php artisan migrate:fresh --seed
+> ```
+> agar penambahan kolom tabel dan data seeder baru masuk ke dalam database.
 
 ---
 
