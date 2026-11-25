@@ -11,6 +11,12 @@ return new class extends Migration
         if (Schema::hasTable('submissions')) {
             Schema::table('submissions', function (Blueprint $table) {
                 // TODO 1: Tambahkan kolom 'nilai' (unsignedTinyInteger, nullable) dan 'catatan_dosen' (text, nullable) setelah kolom 'jawaban'
+                if (!Schema::hasColumn('submissions', 'nilai')) {
+                    $table->unsignedTinyInteger('nilai')->nullable()->after('jawaban');
+                }
+                if (!Schema::hasColumn('submissions', 'catatan_dosen')) {
+                    $table->text('catatan_dosen')->nullable()->after('nilai');
+                }
             });
         }
     }
@@ -20,8 +26,11 @@ return new class extends Migration
         if (Schema::hasTable('submissions')) {
             Schema::table('submissions', function (Blueprint $table) {
                 // TODO 1 (Rollback): Hapus kolom 'nilai' dan 'catatan_dosen' menggunakan $table->dropColumn(...)
+                $columns = array_filter(['nilai', 'catatan_dosen'], fn($col) => Schema::hasColumn('submissions', $col));
+                if (!empty($columns)) {
+                    $table->dropColumn($columns);
+                }
             });
         }
     }
 };
-

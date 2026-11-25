@@ -63,5 +63,88 @@ class DatabaseSeeder extends Seeder
         );
 
         // TODO 8: Tambahkan minimal 2 mata kuliah lagi dengan semester berbeda, 1 mahasiswa tambahan, 2 tugas, dan contoh data submission
+        $mahasiswa2 = User::updateOrCreate(
+            ['email' => 'siti@celoe.test'],
+            [
+                'name' => 'Siti Nurhaliza',
+                'password' => Hash::make('mahasiswa123'),
+                'role' => 'mahasiswa',
+                'nomor_induk' => '1301210002',
+            ]
+        );
+
+        $course2 = MataKuliah::updateOrCreate(
+            ['kode_mk' => 'IF204'],
+            [
+                'nama_mk' => 'Basis Data Lanjut',
+                'deskripsi' => 'Mempelajari perancangan skema relasional, optimasi query SQL, indexing, transaksi ACID, dan integrasi ORM.',
+                'sks' => 3,
+                'semester' => 'Ganjil 2026/2027',
+                'dosen_id' => $dosen->id,
+            ]
+        );
+
+        $course3 = MataKuliah::updateOrCreate(
+            ['kode_mk' => 'IF402'],
+            [
+                'nama_mk' => 'Komputasi Awan & DevOps',
+                'deskripsi' => 'Konsep arsitektur cloud, kontainerisasi Docker, CI/CD pipeline, dan automasi infrastruktur server.',
+                'sks' => 2,
+                'semester' => 'Genap 2026/2027',
+                'dosen_id' => $dosen->id,
+            ]
+        );
+
+        // Daftarkan mahasiswa kedua ke course1 dan kedua mahasiswa ke course2 & course3
+        $course1->students()->syncWithoutDetaching([
+            $mahasiswa2->id => ['status' => 'approved'],
+        ]);
+
+        $course2->students()->syncWithoutDetaching([
+            $mahasiswa1->id => ['status' => 'approved'],
+            $mahasiswa2->id => ['status' => 'approved'],
+        ]);
+
+        $course3->students()->syncWithoutDetaching([
+            $mahasiswa1->id => ['status' => 'approved'],
+        ]);
+
+        // Tambahkan 2 Tugas (Assignment)
+        $assignment1 = Assignment::updateOrCreate(
+            ['course_id' => $course1->id, 'judul' => 'Tugas 01 - Implementasi Middleware & Role Access'],
+            [
+                'deskripsi' => 'Jelaskan alur kerja middleware auth dan role pada Laravel 12 serta berikan contoh penerapannya pada grup route.',
+                'deadline' => now()->addDays(7),
+            ]
+        );
+
+        $assignment2 = Assignment::updateOrCreate(
+            ['course_id' => $course2->id, 'judul' => 'Tugas 01 - Normalisasi & Optimasi Query Eloquent'],
+            [
+                'deskripsi' => 'Analisis masalah N+1 query pada Eloquent ORM dan jelaskan cara mengatasinya menggunakan eager loading.',
+                'deadline' => now()->addDays(10),
+            ]
+        );
+
+        // Contoh Data Submission (1 sudah dinilai, 1 belum dinilai)
+        Submission::updateOrCreate(
+            ['assignment_id' => $assignment1->id, 'user_id' => $mahasiswa1->id],
+            [
+                'jawaban' => 'Middleware auth memeriksa status sesi login pengguna sebelum meneruskan request ke controller, sedangkan middleware role memverifikasi peran dosen atau mahasiswa.',
+                'nilai' => 88,
+                'catatan_dosen' => 'Penjelasan sangat jelas, sistematis, dan sesuai konsep RBAC.',
+                'submitted_at' => now()->subHours(5),
+            ]
+        );
+
+        Submission::updateOrCreate(
+            ['assignment_id' => $assignment1->id, 'user_id' => $mahasiswa2->id],
+            [
+                'jawaban' => 'Penggunaan Route::middleware([\'auth\', \'role:dosen\']) memastikan hanya dosen terautentikasi yang dapat mengelola materi, tugas, dan penilaian.',
+                'nilai' => null,
+                'catatan_dosen' => null,
+                'submitted_at' => now()->subHours(2),
+            ]
+        );
     }
 }

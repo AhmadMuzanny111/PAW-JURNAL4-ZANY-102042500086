@@ -7,6 +7,7 @@ use App\Models\Submission;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SubmissionController extends Controller
@@ -57,20 +58,73 @@ class SubmissionController extends Controller
     public function grade(Request $request, Submission $submission): RedirectResponse
     {
         // TODO 5a (grade): Cek apakah dosen adalah pengampu mata kuliah, validasi nilai (0-100) & catatan_dosen, lalu update submission.
-        // 1. Pastikan $submission->assignment->course->dosen_id === Auth::id(), jika tidak abort(403).
-        // 2. Validasi input 'nilai' (required|integer|min:0|max:100) dan 'catatan_dosen' (nullable|string|max:1000).
-        // 3. Simpan perubahan menggunakan $submission->update(...) dan redirect back() dengan pesan sukses.
+        if (!Auth::check() || !Auth::user()->isDosen() || $submission->assignment->course->dosen_id !== Auth::id()) {
+            abort(403, 'Akses ditolak. Anda bukan dosen pengampu mata kuliah tugas ini.');
+        }
 
-        abort(501, 'Fitur belum diimplementasikan');
+        $validated = $request->validate([
+            'nilai' => ['required', 'integer', 'min:0', 'max:100'],
+            'catatan_dosen' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'nilai.required' => 'Nilai wajib diisi.',
+            'nilai.integer' => 'Nilai harus berupa angka bulat.',
+            'nilai.min' => 'Nilai minimal adalah 0.',
+            'nilai.max' => 'Nilai maksimal adalah 100.',
+            'catatan_dosen.max' => 'Catatan dosen maksimal 1.000 karakter.',
+        ]);
+
+        $submission->update([
+            'nilai' => $validated['nilai'],
+            'catatan_dosen' => $validated['catatan_dosen'] ?? null,
+        ]);
+
+        return back()->with('success', "Nilai untuk {$submission->user->name} berhasil disimpan.");
     }
 
     public function exportCsv(Assignment $assignment): StreamedResponse
     {
         // TODO 5b (exportCsv): Cek kepemilikan dosen, lalu gunakan response()->streamDownload() dan fputcsv() untuk mengunduh data nilai mahasiswa.
-        // 1. Pastikan $assignment->course->dosen_id === Auth::id(), jika tidak abort(403).
-        // 2. Muat relasi course.approvedStudents dan submissions dari $assignment.
-        // 3. Kembalikan response()->streamDownload(...) yang menulis header & baris CSV menggunakan fopen('php://output', 'w') dan fputcsv().
+        if (!Auth::check() || !Auth::user()->isDosen() || $assignment->course->dosen_id !== Auth::id()) {
+            abort(403, 'Akses ditolak. Anda bukan dosen pengampu mata kuliah tugas ini.');
+        }
 
-        abort(501, 'Fitur belum diimplementasikan');
+        $assignment->load(['course.approvedStudents', 'submissions']);
+        $students = $assignment->course->approvedStudents;
+        $submissions = $assignment->submissions->keyBy('user_id');
+
+        $filename = 'rekap-nilai-' . Str::slug($assignment->course->kode_mk . '-' . $assignment->judul) . '.csv';
+
+        return response()->streamDownload(function () use ($students, $submissions) {
+            $handle = fopen('php://output', 'w');
+
+            // Header kolom CSV (sesuai ekspektasi test suite)
+            fputcsv($handle, [
+                'NIM',
+                'Nama Mahasiswa',
+                'Status Pengumpulan',
+                'Waktu Pengumpulan',
+                'Nilai',
+                'Status Kelulusan',
+                'Catatan Dosen',
+            ]);
+
+            foreach ($students as $student) {
+                $sub = $submissions->get($student->id);
+
+                fputcsv($handle, [
+                    $student->nomor_induk ?? '-',
+                    $student->name,
+                    $sub ? 'Sudah Mengumpulkan' : 'Belum Mengumpulkan',
+                    $sub && $sub->submitted_at ? $sub->submitted_at->format('Y-m-d H:i:s') : '-',
+                    $sub && $sub->nilai !== null ? $sub->nilai : '-',
+                    $sub ? $sub->status_nilai : 'Belum Mengumpulkan',
+                    $sub && $sub->catatan_dosen ? $sub->catatan_dosen : '-',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 }

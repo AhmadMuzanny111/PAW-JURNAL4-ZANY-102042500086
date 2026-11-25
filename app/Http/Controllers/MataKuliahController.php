@@ -12,7 +12,7 @@ use Illuminate\View\View;
 
 class MataKuliahController extends Controller
 {
-    public function index(Request $request): View|RedirectResponse
+   public function index(Request $request): View|RedirectResponse
     {
         if (!Auth::check()) {
             return redirect()->route('login');
@@ -20,6 +20,8 @@ class MataKuliahController extends Controller
 
         $user = Auth::user();
         $search = $request->input('search');
+        $semester = $request->query('semester');
+        $sort = $request->query('sort', 'nama_asc');
 
         if ($user->isDosen()) {
             // Dosen mengelola mata kuliah miliknya sendiri
@@ -38,7 +40,16 @@ class MataKuliahController extends Controller
         }
 
         // TODO 4: Tambahkan logika filter berdasarkan parameter 'semester' dan pengurutan berdasarkan parameter 'sort' (nama_asc, nama_desc, sks_desc, sks_asc)
-        $query->orderBy('nama_mk');
+        if ($semester) {
+            $query->where('semester', $semester);
+        }
+
+        match ($sort) {
+            'nama_desc' => $query->orderBy('nama_mk', 'desc'),
+            'sks_desc' => $query->orderBy('sks', 'desc'),
+            'sks_asc' => $query->orderBy('sks', 'asc'),
+            default => $query->orderBy('nama_mk', 'asc'),
+        };
 
         $courses = $query->with('dosen')
             ->withCount([
